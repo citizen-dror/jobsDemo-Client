@@ -1,33 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState} from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Grid,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
+  Button,
   TablePagination,
 } from "@mui/material";
 import { loadJobs } from "../stores/jobSlice";
 import { RootState } from "../stores/store";
 import type { AppDispatch } from "../stores/store";
-import { Job, JobPriority, JobStatus } from "../types/job/";
 import useFilteredJobs from "../hooks/useFilteredJobs";
 import useSortedJobs from "../hooks/useSortedJobs";
 import usePaginationJobs from "../hooks/usePaginationJobs";
+import JobsFilters from "../components/JobsFilters";
+import JobsTable from "../components/JobsTable";
+import AddJobDialog from "../components/AddJobDialog";
 
 const JobsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { jobs, loading, error } = useSelector((state: RootState) => state.jobs);
+  const [openDialog, setOpenDialog] = useState(false);
   useEffect(() => {
     dispatch(loadJobs());
   }, [dispatch]);
@@ -35,77 +26,35 @@ const JobsPage: React.FC = () => {
   const { filteredJobs, searchTerm, selectedStatus, selectedPriority, setSearchTerm, setSelectedStatus, setSelectedPriority } = useFilteredJobs(jobs);
   const { sortedJobs, handleSort, sortBy, sortDirection } = useSortedJobs(filteredJobs);
   const { paginatedJobs, page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePaginationJobs(sortedJobs);
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
 
   return (
     <Box sx={{ padding: 2 }}>
       <h2>Jobs</h2>
-      <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} md={4}>
-          <TextField fullWidth label="Search Job Name" variant="outlined" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select value={selectedStatus} label="Status" onChange={(e) => setSelectedStatus(e.target.value === "" ? null : (e.target.value as JobStatus))}>
-              <MenuItem value="">
-                <em>All</em>
-              </MenuItem>
-              {Object.entries(JobStatus)
-                .filter(([key]) => isNaN(Number(key)))
-                .map(([key, value]) => (
-                  <MenuItem key={key} value={value}>
-                    {key}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <FormControl fullWidth>
-            <InputLabel>Priority</InputLabel>
-            <Select value={selectedPriority} label="Priority" onChange={(e) => setSelectedPriority(e.target.value === "" ? null : e.target.value as JobPriority)}>
-              <MenuItem value="">
-                <em>All</em>
-              </MenuItem>
-              {Object.entries(JobPriority)
-                .filter(([key]) => isNaN(Number(key)))
-                .map(([key, value]) => (
-                  <MenuItem key={key} value={value}>
-                    {key}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+      <Button variant="contained" color="primary" onClick={handleOpenDialog}>
+        Add Job
+      </Button>
+      <JobsFilters
+        searchTerm={searchTerm}
+        selectedStatus={selectedStatus}
+        selectedPriority={selectedPriority}
+        setSearchTerm={setSearchTerm}
+        setSelectedStatus={setSelectedStatus}
+        setSelectedPriority={setSelectedPriority}
+      />
       {loading && <div>Loading...</div>}
       {error && <div style={{ color: "red" }}>{error}</div>}
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              {["id", "jobName", "priority", "startTime", "status"].map((field) => (
-                <TableCell key={field}>
-                  <TableSortLabel active={sortBy === field} direction={sortDirection} onClick={() => handleSort(field as keyof Job)}>
-                    {field}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedJobs.map((job) => (
-              <TableRow key={job.id}>
-                <TableCell>{job.id}</TableCell>
-                <TableCell>{job.jobName}</TableCell>
-                <TableCell>{JobPriority[job.priority]}</TableCell>
-                <TableCell>{job.startTime ? new Date(job.startTime).toLocaleString() : "-"}</TableCell>
-                <TableCell style={{ color: ["blue", "orange", "green", "red"][job.status] }}>{JobStatus[job.status]}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <JobsTable
+        jobs={paginatedJobs}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        handleSort={handleSort}
+      />
       <TablePagination
         rowsPerPageOptions={[5, 10, 25]}
         component="div"
@@ -115,6 +64,7 @@ const JobsPage: React.FC = () => {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+      <AddJobDialog open={openDialog} handleClose={handleCloseDialog} />
     </Box>
   );
 };
