@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   Box,
@@ -21,61 +21,20 @@ import { loadJobs } from "../stores/jobSlice";
 import { RootState } from "../stores/store";
 import type { AppDispatch } from "../stores/store";
 import { Job, JobPriority, JobStatus } from "../types/job/";
+import useFilteredJobs from "../hooks/useFilteredJobs";
+import useSortedJobs from "../hooks/useSortedJobs";
+import usePaginationJobs from "../hooks/usePaginationJobs";
 
 const JobsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { jobs, loading, error } = useSelector((state: RootState) => state.jobs);
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>(jobs);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [sortBy, setSortBy] = useState<keyof Job>("id");
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<JobStatus | "" | null>(null);
-  const [selectedPriority, setSelectedPriority] = useState<JobPriority | "" | null>(null);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-
   useEffect(() => {
     dispatch(loadJobs());
   }, [dispatch]);
 
-  const handleSort = (property: keyof Job) => {
-    const isAsc = sortBy === property && sortDirection === "asc";
-    setSortDirection(isAsc ? "desc" : "asc");
-    setSortBy(property);
-  };
-
-  useEffect(() => {
-    const filtered = jobs.filter((job) => {
-      const matchesSearchTerm = job.jobName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = selectedStatus !== undefined && selectedStatus !== null
-        ? job.status === selectedStatus
-        : true;
-        const matchesPriority = selectedPriority !== undefined && selectedPriority !== null
-        ? job.priority === selectedPriority
-        : true;
-      return matchesSearchTerm && matchesStatus && matchesPriority;
-    });
-    setFilteredJobs(filtered);
-  }, [searchTerm, selectedStatus, selectedPriority, jobs]);
-
-  const sortedJobs = [...filteredJobs].sort((a, b) => {
-    let comparison = 0;
-    if (sortBy === "id" || sortBy === "priority" || sortBy === "status") {
-      comparison = (a[sortBy] > b[sortBy] ? 1 : -1) * (sortDirection === "asc" ? 1 : -1);
-    } else if (sortBy === "startTime") {
-      comparison = ((a.startTime || "") > (b.startTime || "") ? 1 : -1) * (sortDirection === "asc" ? 1 : -1);
-    }
-    return comparison;
-  });
-
-  const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  const { filteredJobs, searchTerm, selectedStatus, selectedPriority, setSearchTerm, setSelectedStatus, setSelectedPriority } = useFilteredJobs(jobs);
+  const { sortedJobs, handleSort, sortBy, sortDirection } = useSortedJobs(filteredJobs);
+  const { paginatedJobs, page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePaginationJobs(sortedJobs);
 
   return (
     <Box sx={{ padding: 2 }}>
@@ -87,9 +46,7 @@ const JobsPage: React.FC = () => {
         <Grid item xs={12} md={4}>
           <FormControl fullWidth>
             <InputLabel>Status</InputLabel>
-            <Select value={selectedStatus} label="Status"
-              onChange={(e) => setSelectedStatus(e.target.value === "" ? null : (e.target.value as JobStatus))}
-            >
+            <Select value={selectedStatus} label="Status" onChange={(e) => setSelectedStatus(e.target.value === "" ? null : (e.target.value as JobStatus))}>
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
@@ -106,9 +63,7 @@ const JobsPage: React.FC = () => {
         <Grid item xs={12} md={4}>
           <FormControl fullWidth>
             <InputLabel>Priority</InputLabel>
-            <Select value={selectedPriority} label="Priority"
-              onChange={(e) => setSelectedPriority(e.target.value === "" ? null : e.target.value as JobPriority)}
-              >
+            <Select value={selectedPriority} label="Priority" onChange={(e) => setSelectedPriority(e.target.value === "" ? null : e.target.value as JobPriority)}>
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
@@ -139,7 +94,7 @@ const JobsPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedJobs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((job) => (
+            {paginatedJobs.map((job) => (
               <TableRow key={job.id}>
                 <TableCell>{job.id}</TableCell>
                 <TableCell>{job.jobName}</TableCell>
