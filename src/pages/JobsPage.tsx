@@ -29,8 +29,8 @@ const JobsPage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [sortBy, setSortBy] = useState<keyof Job>("id");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<JobStatus | "">("");
-  const [selectedPriority, setSelectedPriority] = useState<JobPriority | "">("");
+  const [selectedStatus, setSelectedStatus] = useState<JobStatus | "" | null>(null);
+  const [selectedPriority, setSelectedPriority] = useState<JobPriority | "" | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -47,8 +47,12 @@ const JobsPage: React.FC = () => {
   useEffect(() => {
     const filtered = jobs.filter((job) => {
       const matchesSearchTerm = job.jobName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = selectedStatus ? job.status === selectedStatus : true;
-      const matchesPriority = selectedPriority ? job.priority === selectedPriority : true;
+      const matchesStatus = selectedStatus !== undefined && selectedStatus !== null
+        ? job.status === selectedStatus
+        : true;
+        const matchesPriority = selectedPriority !== undefined && selectedPriority !== null
+        ? job.priority === selectedPriority
+        : true;
       return matchesSearchTerm && matchesStatus && matchesPriority;
     });
     setFilteredJobs(filtered);
@@ -83,30 +87,38 @@ const JobsPage: React.FC = () => {
         <Grid item xs={12} md={4}>
           <FormControl fullWidth>
             <InputLabel>Status</InputLabel>
-            <Select value={selectedStatus} label="Status" onChange={(e) => setSelectedStatus(e.target.value as JobStatus)}>
+            <Select value={selectedStatus} label="Status"
+              onChange={(e) => setSelectedStatus(e.target.value === "" ? null : (e.target.value as JobStatus))}
+            >
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {Object.entries(JobStatus).map(([key, value]) => (
-                <MenuItem key={key} value={value}>
-                  {key}
-                </MenuItem>
-              ))}
+              {Object.entries(JobStatus)
+                .filter(([key]) => isNaN(Number(key)))
+                .map(([key, value]) => (
+                  <MenuItem key={key} value={value}>
+                    {key}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
         </Grid>
         <Grid item xs={12} md={4}>
           <FormControl fullWidth>
             <InputLabel>Priority</InputLabel>
-            <Select value={selectedPriority} label="Priority" onChange={(e) => setSelectedPriority(e.target.value as JobPriority)}>
+            <Select value={selectedPriority} label="Priority"
+              onChange={(e) => setSelectedPriority(e.target.value === "" ? null : e.target.value as JobPriority)}
+              >
               <MenuItem value="">
                 <em>All</em>
               </MenuItem>
-              {Object.entries(JobPriority).map(([key, value]) => (
-                <MenuItem key={key} value={value}>
-                  {key}
-                </MenuItem>
-              ))}
+              {Object.entries(JobPriority)
+                .filter(([key]) => isNaN(Number(key)))
+                .map(([key, value]) => (
+                  <MenuItem key={key} value={value}>
+                    {key}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
         </Grid>
