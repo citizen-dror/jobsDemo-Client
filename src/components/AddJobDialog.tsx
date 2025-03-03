@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -6,13 +6,12 @@ import {
   TextField,
   DialogActions,
   Button,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
+  FormControlLabel,
+  Checkbox,
+  Typography,
 } from "@mui/material";
 import { JobPriority, CreateJobDto } from "../types/job";
-import { createJob } from "../api/jobApi"; 
+import { createJob } from "../api/jobApi";
 
 interface AddJobDialogProps {
   open: boolean;
@@ -21,23 +20,60 @@ interface AddJobDialogProps {
 
 const AddJobDialog: React.FC<AddJobDialogProps> = ({ open, handleClose }) => {
   const [name, setName] = useState("");
-  const [priority, setPriority] = useState<JobPriority | "">("");
+  const [priority, setPriority] = useState<JobPriority>(JobPriority.Regular);
+  const [errors, setErrors] = useState<{ name?: string; priority?: string }>({});
+  const [isValid, setIsValid] = useState(false);
+  const [isNameTouched, setIsNameTouched] = useState(false); // Track if name field has been touched
+  const [nameTimeout, setNameTimeout] = useState<number | null>(null);
 
-  const handleSubmit = async () => {
-    if (!name || priority === "") {
-      console.error("Job name and priority are required.");
-      return;
+  // ✅ Live validation when inputs change
+  useEffect(() => {
+    validate();
+  }, [name, priority]);
+
+  const validate = () => {
+    const newErrors: typeof errors = {};
+
+    // ✅ JobName validation (Required + Length)
+    if (!name.trim()) {
+      newErrors.name = "Job Name is required.";
+    } else if (name.trim().length < 4 || name.trim().length > 255) {
+      newErrors.name = "Job Name must be between 4 and 255 characters.";
     }
 
+    // ✅ JobPriority validation
+    if (![JobPriority.Regular, JobPriority.High].includes(priority)) {
+      newErrors.priority = "Invalid Job Priority. Allowed values: Regular (10) or High (20).";
+    }
+
+    setErrors(newErrors);
+    setIsValid(Object.keys(newErrors).length === 0);
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+
+    // ✅ Debounce logic: wait 500ms after typing before running validation
+    if (nameTimeout) clearTimeout(nameTimeout);
+    setNameTimeout(
+      window.setTimeout(() => {
+        validate();
+      }, 500)
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!isValid) return;
+
     const jobDto: CreateJobDto = {
-      jobName: name,
-      priority: Number(priority), // Assuming priority is a number in the CreateJobDto
+      jobName: name.trim(),
+      priority,
     };
 
     try {
       const createdJob = await createJob(jobDto);
       console.log("New Job Created:", createdJob);
-      handleClose(); // Close the dialog after successful creation
+      handleClose();
     } catch (error) {
       console.error("Error creating job:", error);
     }
@@ -53,30 +89,39 @@ const AddJobDialog: React.FC<AddJobDialogProps> = ({ open, handleClose }) => {
           variant="outlined"
           margin="dense"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={handleNameChange}
+          error={isNameTouched && !!errors.name} // Show error only after the user interacts
+          onBlur={() => setIsNameTouched(true)} // Mark field as touched
+          helperText={isNameTouched && errors.name} // Show error only after the field is touched
         />
-        <FormControl fullWidth margin="dense">
-          <InputLabel>Priority</InputLabel>
-          <Select
-            value={priority}
-            label="Priority"
-            onChange={(e) => setPriority(e.target.value as JobPriority)}
-          >
-            {Object.entries(JobPriority)
-              .filter(([key]) => isNaN(Number(key)))
-              .map(([key, value]) => (
-                <MenuItem key={key} value={value}>
-                  {key}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
+        
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={priority === JobPriority.High}
+              onChange={(e) => setPriority(e.target.checked ? JobPriority.High : JobPriority.Regular)}
+            />
+          }
+          label="High Priority"
+        />
+        
+        {errors.priority && (
+          <Typography variant="body2" color="error" style={{ marginTop: 5 }}>
+            {errors.priority}
+          </Typography>
+        )}
       </DialogContent>
+      
       <DialogActions>
         <Button onClick={handleClose} color="secondary">
           Cancel
         </Button>
-        <Button onClick={handleSubmit} color="primary" variant="contained">
+        <Button
+          onClick={handleSubmit}
+          color="primary"
+          variant="contained"
+          disabled={!isValid}
+        >
           Add
         </Button>
       </DialogActions>

@@ -1,5 +1,5 @@
 
 export enum JobPriority {
-    Regular = 0,
-    High = 1,
+    Regular = 10,
+    High = 20,
 }
