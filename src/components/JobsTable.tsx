@@ -31,7 +31,7 @@ const JobsTable: React.FC<JobsTableProps> = ({
       <Table>
         <TableHead>
           <TableRow>
-            {["id", "jobName", "priority", "startTime", "status", "progress"].map((field) => (
+            {["id", "jobName", "priority", "createdTime", "status", "progress"].map((field) => (
               <TableCell key={field}>
                 <TableSortLabel
                   active={sortBy === field}
@@ -54,7 +54,7 @@ const JobsTable: React.FC<JobsTableProps> = ({
                 <TableCell>{job.jobName}</TableCell>
                 <TableCell>{JobPriority[job.priority]}</TableCell>
                 <TableCell>
-                  {job.startTime ? new Date(job.startTime).toLocaleString() : "-"}
+                  {job.createdTime ? new Date(job.createdTime).toLocaleString() : "-"}
                 </TableCell>
                 <TableCell style={{ color: ["blue", "orange", "green", "red"][job.status] }}>
                   {/* Use updated status if available */}

@@ -15,8 +15,8 @@ const useSortedJobs = (jobs: Job[]) => {
         let comparison = 0;
         if (sortBy === "id" || sortBy === "priority" || sortBy === "status") {
           comparison = (a[sortBy] > b[sortBy] ? 1 : -1) * (sortDirection === "asc" ? 1 : -1);
-        } else if (sortBy === "startTime") {
-          comparison = ((a.startTime || "") > (b.startTime || "") ? 1 : -1) * (sortDirection === "asc" ? 1 : -1);
+        } else if (sortBy === "createdTime") {
+          comparison = ((a.createdTime || "") > (b.createdTime || "") ? 1 : -1) * (sortDirection === "asc" ? 1 : -1);
         }
         return comparison;
   });

@@ -8,5 +8,6 @@ export interface Job {
     status: JobStatus;
     startTime: string | null;
     endTime: string | null;
+    createdTime: string | null;
     progress: number;
 }
