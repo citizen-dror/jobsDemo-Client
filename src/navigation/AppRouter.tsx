@@ -9,7 +9,7 @@ const AppRouter: React.FC = () => {
     <BrowserRouter>
      <Navbar />
       <Routes>
-        <Route path="/" element={<h1 className="p-4 text-2xl">Home Page</h1>} />
+        <Route path="/" element={<JobsPage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/about" element={<AboutPage />} />
       </Routes>
