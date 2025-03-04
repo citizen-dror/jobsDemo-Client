@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { Job } from "../types/job";
-import { fetchJobs } from "../api/jobApi";
+import { Job, JobStatus } from "../types/job";
+import { fetchJobs, stopJob, restartJob } from "../api/jobApi";
 
 // Define an initial state for jobs
 interface JobState {
@@ -16,10 +16,20 @@ const initialState: JobState = {
   error: null,
 };
 
-// Create an async thunk to fetch jobs
+// Create async thunks
 export const loadJobs = createAsyncThunk("jobs/loadJobs", async () => {
   const jobs = await fetchJobs();
   return jobs;
+});
+
+export const stopJobAction = createAsyncThunk("jobs/stopJob", async (jobId: number) => {
+  await stopJob(jobId);
+  return jobId;
+});
+
+export const restartJobAction = createAsyncThunk("jobs/restartJob", async (jobId: number) => {
+  await restartJob(jobId);
+  return jobId;
 });
 
 // Create the slice
@@ -40,9 +50,17 @@ const jobSlice = createSlice({
       .addCase(loadJobs.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to load jobs.";
+      })
+      .addCase(stopJobAction.fulfilled, (state, action) => {
+        const job = state.jobs.find((j) => j.id === action.payload);
+        if (job) job.status = JobStatus.Pending;
+      })
+      .addCase(restartJobAction.fulfilled, (state, action) => {
+        const job = state.jobs.find((j) => j.id === action.payload);
+        if (job) job.status = JobStatus.InProgress;
       });
   },
 });
 
-// Export the async thunk and reducer
+// Export the async thunks and reducer
 export default jobSlice.reducer;

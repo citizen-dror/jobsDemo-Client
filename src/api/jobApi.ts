@@ -22,3 +22,21 @@ export const createJob = async (jobDto: CreateJobDto) => {
     throw error;
   }
 };
+
+export const stopJob = async (jobId: number) => {
+  try {
+    await axios.put(`${API_URL}/${jobId}/stop`);
+  } catch (error) {
+    console.error("API Error:", error);
+    throw error;
+  }
+};
+
+export const restartJob = async (jobId: number) => {
+  try {
+    await axios.put(`${API_URL}/${jobId}/restart`);
+  } catch (error) {
+    console.error("API Error:", error);
+    throw error;
+  }
+};
