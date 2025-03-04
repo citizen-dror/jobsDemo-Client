@@ -9,7 +9,8 @@ import {
   TableSortLabel,
 } from "@mui/material";
 import { Job, JobPriority, JobStatus } from "../types/job";
-import { useSignalR } from "../providers/SignalRProvider"; // Import SignalR hook
+import { useSignalR } from "../providers/SignalRProvider"; 
+import { statusColorMap } from "../constants/jobStatusColors";
 
 interface JobsTableProps {
   jobs: Job[];
@@ -56,13 +57,11 @@ const JobsTable: React.FC<JobsTableProps> = ({
                 <TableCell>
                   {job.createdTime ? new Date(job.createdTime).toLocaleString() : "-"}
                 </TableCell>
-                <TableCell style={{ color: ["blue", "orange", "green", "red"][job.status] }}>
-                  {/* Use updated status if available */}
-                  {JobStatus[isUpdated ? updatedJob.status : job.status]}
+                <TableCell style={{ color: statusColorMap[isUpdated ? updatedJob.status : job.status] }}>
+                    {JobStatus[isUpdated ? updatedJob.status : job.status]}
                 </TableCell>
                 <TableCell>
-                  {/* Use updated progress if available */}
-                  {isUpdated ? `${updatedJob.progress}%` : `${job.progress}%`}
+                    {isUpdated ? `${updatedJob.progress}%` : `${job.progress}%`}
                 </TableCell>
               </TableRow>
             );
