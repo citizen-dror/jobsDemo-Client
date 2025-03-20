@@ -29,9 +29,11 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
       console.log('Job update received:', job);
       setUpdatedJob(job);
     });
-
+    // in StrictMode(dev)- connection will run 2 times and one stop  
     return () => {
-      connection.stop();
+      setTimeout(() => {
+        connection.stop();
+      }, 5000); // Delay stop to ensure proper handling (prevnet error msg)
     };
   }, []);
 
